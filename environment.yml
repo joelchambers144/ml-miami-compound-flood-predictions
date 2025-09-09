@@ -1,0 +1,15 @@
+name: conda-flood
+dependencies:
+  - python
+  - pip
+  - ipykernel
+  - jupyter
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - plotly
+  - keras
+  - keras-tuner
+  - tensorboard
+  - scikit-learn
