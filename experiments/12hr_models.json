@@ -1,0 +1,60 @@
+{
+    "experiments": 
+    [
+        {
+            "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_merged_1996_2024_NEW.csv",
+            "experiment_name": "12hr_gwl_wl",
+            "lead_time": 12,
+            "target_column": "gwl",
+
+            "input_specifications": [
+                {"column": "gwl", "lag_range": [-24, 0]},
+                {"column": "wl", "lag_range": [-24, 0]}
+            ],
+
+            "model_architectures": ["MLP"],
+            "train_years": [2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            "test_years": [2024],
+            "loss_function": "mean_squared_error",
+            "objective_metric": "mean_squared_error"
+        },
+
+        {
+            "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_merged_1996_2024_NEW.csv",
+            "experiment_name": "12hr_rain_measured",
+            "lead_time": 12,
+            "target_column": "gwl",
+
+            "input_specifications": [
+                {"column": "gwl", "lag_range": [-24, 0]},
+                {"column": "wl", "lag_range": [-24, 0]},
+                {"column": "rain", "lag_range": [-24, 0]}
+            ],
+
+            "model_architectures": ["MLP"],
+            "train_years": [2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            "test_years": [2024],
+            "loss_function": "mean_squared_error",
+            "objective_metric": "mean_squared_error"
+        },
+
+        {
+            "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_merged_1996_2024_NEW.csv",
+            "experiment_name": "12hr_rain_pred",
+            "lead_time": 12,
+            "target_column": "gwl",
+
+            "input_specifications": [
+                {"column": "gwl", "lag_range": [-24, 0]},
+                {"column": "wl", "lag_range": [-24, 0]},
+                {"column": "rain", "lag_range": [-24, 12]}
+            ],
+
+            "model_architectures": ["MLP"],
+            "train_years": [2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            "test_years": [2024],
+            "loss_function": "mean_squared_error",
+            "objective_metric": "mean_squared_error"
+        }
+    ]
+}
