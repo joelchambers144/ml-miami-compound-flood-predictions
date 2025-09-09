@@ -16,8 +16,7 @@ Miami, Florida is prone to compound flooding (when multiple flood drivers occur 
 `conda env create -f environment.yml`
 2. Activate the environment
 `conda activate conda-flood`
-3. If you need to add or remove any libraries from the environment, run the command below
-`conda env update --name conda-flood --file environment.yml --prune`
+3. If you need to add or remove any libraries from the environment, run the command: `conda env update --name conda-flood --file environment.yml --prune`
 
 
 ## How to run machine learning experiments
