@@ -3,17 +3,20 @@ from keras.layers import Dense, Dropout
 import keras.metrics as km
 from keras.models import Sequential, save_model, load_model
 from keras.optimizers import Adam
-from keras_tuner import Hyperband, Objective
+from keras_tuner import GridSearch, Objective
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import time
 
-import src.evaluation.metrics as m 
-from src.data.preprocessing import create_partitions_keras, get_train_test_split
+from src.data.preprocessing import create_kfolds_keras, get_train_test_split
 from src.utils.file_operations import ensure_dir
 
 class MLPRegressor():
+
+    # Scores that need to be maximized, not minimized
+    metrics_to_max = ['r2_score', 'mean_absolute_percentage_error', 'cf_percentage_5cm', 'cf_percentage_10cm', 'cf_percentage_15cm']
 
     def build_model(self, hp=None, params=None):
         """
@@ -50,12 +53,12 @@ class MLPRegressor():
 
         # Compile
         model.compile(
-        loss='mean_squared_error',
-        optimizer=Adam(learning_rate=learning_rate),
-        metrics=[
-            km.MeanSquaredError(), km.RootMeanSquaredError(), km.MeanAbsoluteError(),
-            km.MeanAbsolutePercentageError(), km.R2Score()
-        ]
+            loss='mean_squared_error',
+            optimizer=Adam(learning_rate=learning_rate),
+            metrics=[
+                km.MeanSquaredError(), km.RootMeanSquaredError(), km.MeanAbsoluteError(),
+                km.MeanAbsolutePercentageError(), km.R2Score()
+            ]
         )
 
         return model
@@ -65,25 +68,22 @@ class MLPRegressor():
         direction = 'min'
         objective = experiment.objective_metric
 
-        if objective == 'r2_score':
+        if objective in self.metrics_to_max:
             direction = 'max'
 
         target_column_formatted = f'{experiment.target_column}_t+{experiment.lead_time}'
 
-        # Create partitions for k-fold validation
-        partitions = create_partitions_keras(df_data, experiment.train_years, target_column_formatted)
+        # Create folds for k-fold validation
+        kfolds = create_kfolds_keras(df_data, experiment.train_years, target_column_formatted)
         
-        # Perform k-fold cross-validation
-        cv_metrics = self.kfold_cross_validation(partitions, results_directory, objective = f'val_{objective}', direction = direction)
+        # Perform k-fold cross-validation and return metrics for all folds
+        cv_metrics = self.kfold_cross_validation(kfolds, results_directory, objective = f'val_{objective}', direction = direction)
 
-        # Find the trial ID with the best metric score
+        # Find the trial ID with the best metric score on average over all folds
         best_trial_id = self.find_best_trial_id(cv_metrics, metric = f'val_{objective}', direction = direction)
 
         # Find all rows with the same trial ID to extract the metrics of best hyperparameters
         df_best_trial = cv_metrics[cv_metrics['trial_id'] == best_trial_id].copy()
-
-        # Calculate post-training evaluation metrics row-wise (for all validation years)
-        #df_best_trial = self.calculate_post_train_metrics(df_best_trial)
 
         # Save metrics with best trial ID to csv
         tuning_results_directory = results_directory + 'tuning/'
@@ -96,65 +96,67 @@ class MLPRegressor():
         return best_hyperparams
     
 
-    def kfold_cross_validation(self, partitions, results_directory, objective = 'val_mean_squared_error', direction = 'min'):
+    def kfold_cross_validation(self, kfolds, results_directory, objective = 'val_mean_squared_error', direction = 'min'):
         tuning_results_directory = results_directory + 'tuning/'
 
         df_metrics_list = []
-        for partition in partitions:
-            train_years = partition['train_years']
-            valid_years = partition['valid_years']
-            X_train, y_train = partition['train_data']
-            X_valid, y_valid = partition['valid_data']
+        for fold in kfolds:
+            valid_years = fold['valid_years']
+            X_train, y_train = fold['train_data']
+            X_valid, y_valid = fold['valid_data']
 
             # Set the project folder name as the validation year
             tuning_project_name = str(valid_years[0])
-            import time
+
+            print(f'Fold Validation Year: {valid_years[0]}')
+
             start = time.time()
             df_metrics = self.tune_model(X_train, y_train, X_valid, y_valid, 
                                           tuning_results_directory, tuning_project_name,
                                           objective = objective, direction = direction)
-
             end = time.time()
 
             print(f"Tuning took {(end - start)/60:.2f} minutes")
+
+            # Add validation year to metrics df for this fold
             df_metrics['validation_years'] = str(valid_years[0])
+
+            # Add metrics for this fold to full list of metrics
             df_metrics_list.append(df_metrics)
             
         df_all_metrics = pd.concat(df_metrics_list, ignore_index=True)
         
         return df_all_metrics
         
-
+    
     def tune_model(self, x_train, y_train, x_val, y_val, directory, project_name,
-                    objective='val_mean_squared_error', direction='min',
-                    batch_size=64, validation_batch_size=64,
-                    max_epochs=300, patience=10, factor=3):
+                 objective='val_mean_squared_error', direction='min',
+                 batch_size=64, validation_batch_size=64, epochs=2000, 
+                 patience=20):
         """
-        Hyperparameter tuning using Hyperband.
-
-        Parameters:
-            x_train, y_train: training data (NumPy arrays)
-            x_val, y_val: validation data (NumPy arrays)
-            directory: folder where results will be saved
-            project_name: project identifier for KerasTuner
-            objective: metric to optimize (default: val_mean_squared_error)
-            direction: "min" or "max"
-            batch_size: training batch size
-            validation_batch_size: validation batch size
-            max_epochs: maximum training epochs per trial
-            patience: early stopping patience
-            factor: reduction factor for Hyperband (controls aggressiveness)
+        Hyperparameter tuning using GridSearch.
+        
+        Args:
+            x_train, y_train: training data (NumPy arrays).
+            x_val, y_val: validation data (NumPy arrays).
+            directory: folder where results will be saved.
+            project_name: project identifier for KerasTuner.
+            objective: metric to optimize (default: val_mean_squared_error).
+            direction: "min" or "max".
+            batch_size: training batch size.
+            validation_batch_size: validation batch size.
+            epochs: training epochs per trial.
+            patience: early stopping patience.
         """
 
-        self.tuner = Hyperband(
+        self.tuner = GridSearch(
             hypermodel=self.build_model,
             objective=Objective(objective, direction=direction),
-            max_epochs=max_epochs,
-            factor=factor,                # higher = fewer models trained deeply
             seed=42,
             directory=directory,
             project_name=project_name,
-            overwrite=False               # reload past trials if present
+            max_trials = 10,
+            overwrite=False
         )
 
         early_stopping = EarlyStopping(
@@ -172,6 +174,7 @@ class MLPRegressor():
 
         self.tuner.search(
             x_train, y_train,
+            epochs = epochs,
             validation_data=(x_val, y_val),
             batch_size=batch_size,
             validation_batch_size=validation_batch_size,
@@ -181,9 +184,11 @@ class MLPRegressor():
 
         df_metrics = self.save_trial_data()
 
+        print(self.tuner.results_summary())
+
         return df_metrics
 
-        
+
     def save_trial_data(self):
         trial_data = []
 
@@ -193,10 +198,20 @@ class MLPRegressor():
                 "status": trial.status,
                 **trial.hyperparameters.values
             }
-            
+
+            # Find the epoch with the best score based on the given objective metric for this trial/
+            # This epoch is where the model weights are saved after early stopping kicks in
+            best_epoch = trial.best_step
+        
+            # Add it to the entry dictionary
+            entry["best_epoch"] = best_epoch
+
+            # Find and save all metric values at the best epoch from above
             for metric_name, metric in trial.metrics.metrics.items():
-                entry[metric_name] = metric.get_best_value()
-            
+                best_observation = metric._observations.get(best_epoch)
+
+                entry[metric_name] = best_observation.value[0]
+
             trial_data.append(entry)
 
         df = pd.DataFrame(trial_data)
@@ -208,28 +223,13 @@ class MLPRegressor():
         # Group by trial ID and calculate mean of metric
         df_grouped = df_metrics.groupby('trial_id')[metric].mean().reset_index()
 
-        # Find the trial ID with the best metric score
+        # Find the trial ID with the best mean metric score over all folds
         if direction == 'max':
             best_trial_id = df_grouped.loc[df_grouped[metric].idxmax(), 'trial_id']
         else:
             best_trial_id = df_grouped.loc[df_grouped[metric].idxmin(), 'trial_id']
 
         return best_trial_id
-    
-
-    def calculate_post_train_metrics(self, df_best_trial):
-        df_best_trial['CSI'] = df_best_trial.apply(lambda row: m.csi(row['false_positives'], row['false_negatives'], row['true_positives']), axis=1)
-        df_best_trial['FAR'] = df_best_trial.apply(lambda row: m.far(row['false_positives'], row['true_positives']), axis=1)
-        df_best_trial['POD'] = df_best_trial.apply(lambda row: m.pod(row['false_negatives'], row['true_positives']), axis=1)
-        df_best_trial['PSS'] = df_best_trial.apply(lambda row: m.pss(row['true_negatives'], row['false_positives'], row['false_negatives'], row['true_positives']), axis=1)
-        df_best_trial['HSS'] = df_best_trial.apply(lambda row: m.hss(row['true_negatives'], row['false_positives'], row['false_negatives'], row['true_positives']), axis=1)
-        df_best_trial['val_CSI'] = df_best_trial.apply(lambda row: m.csi(row['val_false_positives'], row['val_false_negatives'], row['val_true_positives']), axis=1)
-        df_best_trial['val_FAR'] = df_best_trial.apply(lambda row: m.far(row['val_false_positives'], row['val_true_positives']), axis=1)
-        df_best_trial['val_POD'] = df_best_trial.apply(lambda row: m.pod(row['val_false_negatives'], row['val_true_positives']), axis=1)
-        df_best_trial['val_PSS'] = df_best_trial.apply(lambda row: m.pss(row['val_true_negatives'], row['val_false_positives'], row['val_false_negatives'], row['val_true_positives']), axis=1)
-        df_best_trial['val_HSS'] = df_best_trial.apply(lambda row: m.hss(row['val_true_negatives'], row['val_false_positives'], row['val_false_negatives'], row['val_true_positives']), axis=1)
-
-        return df_best_trial
     
 
     def train_final_model(self, df_data, experiment, best_hyperparams, results_directory):
@@ -242,19 +242,12 @@ class MLPRegressor():
         direction = 'min'
         objective = experiment.objective_metric
 
-        if objective == 'r2_score':
+        if objective in self.metrics_to_max:
             direction = 'max'
 
         # Train ensemble models using best hyperparameters
         ensemble_models = self.train_ensemble(X_train, y_train, X_valid, y_valid, best_hyperparams, 
                                               model_directory, objective = f'val_{objective}', direction = direction)
-        
-        '''
-        # Find best decision threshold based on defined metric
-        y_probs_valid = self.predict(ensemble_models, X_valid)
-        best_threshold, best_score, all_scores = find_best_decision_threshold(y_valid, y_probs_valid, 
-                                                                                   metric=experiment.threshold_metric)
-        '''
 
         return ensemble_models
     
@@ -302,7 +295,16 @@ class MLPRegressor():
         # Make predictions from each model in the ensemble
         ensemble_preds = np.array([model.predict(X, verbose=0).flatten() for model in models])
 
-        # Average them (soft voting)
+        # Average them
         ensemble_mean = np.mean(ensemble_preds, axis=0)
 
-        return ensemble_mean
+        # Build dictionary
+        results = {
+            'predictions': ensemble_mean
+        }
+
+        # Add predictions for each ensemble member to dictionary
+        for i, preds in enumerate(ensemble_preds, start=1):
+            results[f'model_{i}'] = preds
+
+        return results
