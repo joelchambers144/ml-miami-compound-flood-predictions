@@ -7,10 +7,10 @@ This script takes an experiment object, dataset, model architecture (Multilayer 
 and a results directory to place the results for the specific experiment being run. From there the 
 experiment pipeline is run consisting of the following steps: 
 
-0. Split up train and test sets
-1. Hyperparameter tuning paired with k-fold cross-validation
-2. Train final model using best hyperparameters from step 1 and full training set
-3. Evaluate model on test set
+1. Split up train and test sets
+2. Hyperparameter tuning paired with k-fold cross-validation on training set
+3. Train final model using best hyperparameters from step 2 and full training set
+4. Evaluate model on test set
 """ 
 #---------------------------------------------
 # 
@@ -25,6 +25,7 @@ from src.utils.file_operations import ensure_dir
 def experiment_pipeline(experiment, df_data, model_architecture, results_directory):
     model = choose_model_architecture(model_architecture)
     
+    # Results for individual model go into a directory the same name as the model
     model_results_directory = results_directory + f'{model_architecture}/'
 
     # Create lagged input columns
@@ -54,6 +55,8 @@ def experiment_pipeline(experiment, df_data, model_architecture, results_directo
     ensure_dir(model_test_results_directory)
     test_results_path = model_test_results_directory + 'results.csv'
 
+    # Attempt to read in existing test metrics for experiment. If they don't exist,
+    # then calculate the test metrics for this experiment
     try:
         df_test_metrics = pd.read_csv(test_results_path)
     except FileNotFoundError:
@@ -63,18 +66,21 @@ def experiment_pipeline(experiment, df_data, model_architecture, results_directo
         feature_columns = df_test_inputs.columns
         X_test, y_test = get_xy(df_test, feature_columns, target_column_formatted)
         
-        # Make predictions on test set using best decision threshold
+        # Make predictions on test set
         y_pred_test = model.predict(best_model, X_test)
 
         # Create test predictions path for this model
         test_predictions_path = model_test_results_directory + 'predictions.csv'
 
+        # Add labels to prediction dictionary
+        y_pred_test['labels'] = y_test
+
         # Save test predictions and labels to csv file to be plotted later
-        df_predictions = pd.DataFrame({'labels': y_test, 'predictions': y_pred_test}, index = df_test.index)
+        df_predictions = pd.DataFrame(y_pred_test, index = df_test.index)
         df_predictions.to_csv(test_predictions_path)
         
         # Evaluate model performance on test set
-        df_test_metrics = m.evaluate_model(y_test, y_pred_test)
+        df_test_metrics = m.evaluate_model(y_test, y_pred_test['predictions'])
         df_test_metrics['model'] = model_architecture
 
         # Save test metrics to results folder
