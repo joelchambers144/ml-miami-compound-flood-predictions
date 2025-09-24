@@ -1,4 +1,4 @@
-name: conda-test
+name: conda-flood
 dependencies:
   - python=3.12.11
   - pip=25.2
