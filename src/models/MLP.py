@@ -155,7 +155,6 @@ class MLPRegressor():
             seed=42,
             directory=directory,
             project_name=project_name,
-            max_trials = 10,
             overwrite=False
         )
 
