@@ -21,7 +21,7 @@ Miami, Florida is prone to compound flooding (when multiple flood drivers occur 
 
 ## How to run machine learning experiments
 0. If you haven't already, activate your conda environment using `conda activate conda-flood`
-1. Run the command `python run_experiments.py -e {your_experiment_configuration_json_file}` to run the experiments in your experiment configuration json file.
+1. Run the command `python run_experiments.py -e {your_experiment_configuration_json_files}` to run the experiments in your experiment configuration json file.
 
 
 ## Using TensorBoard to visualize Keras MLP hyperparameter tuning results:
