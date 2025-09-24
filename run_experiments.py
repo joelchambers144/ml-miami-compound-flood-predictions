@@ -6,14 +6,14 @@
 This script acts as the main driver for experiment runs. An experiment configuration csv file must be passed as a command
 line argument. The experiment is then parsed and placed in an Experiment object to be preprocessed and then trained on.
 The experiments can be placed anywhere, but preferably inside the `experiments` folder. The training/testing results + trained
-models for each experiment are placed in the `results` directory.
+models for each experiment are placed in the `results` directory. Multiple experiment configuration files can be passed.
 
 Example run: `python run_experiments.py -e experiments/experiments.json`
 """ 
 #---------------------------------------------
 # 
 #
-from optparse import OptionParser
+import argparse
 import pandas as pd
 import os
 
@@ -36,14 +36,13 @@ def run_experiments(experiments: list):
         if os.path.exists(test_results_path):
             print(f'Test results exist for experiment: {experiment.experiment_name}. Delete results to rerun experiment.')
             continue
+
+        # Read in the data file from the experiment object
+        df_data = pd.read_csv(experiment.data_file_path, index_col = 0, parse_dates = True)
         
         df_metrics_list = []
         for model in experiment.model_architectures:
-
-            # Read in the data file from the experiment object
-            df_data = pd.read_csv(experiment.data_file_path, index_col = 0, parse_dates = True)
-
-            # Run ML pipeline
+            # Run ML pipeline for each model
             df_metrics = experiment_pipeline(experiment, df_data, model, results_directory)
 
             df_metrics_list.append(df_metrics)
@@ -55,15 +54,19 @@ def run_experiments(experiments: list):
         df_all_metrics.to_csv(test_results_path)
 
 
-parser = OptionParser()
+parser = argparse.ArgumentParser(
+    description="Run ML experiments from one or more JSON configuration files"
+)
 
-parser.add_option("-e", "--experiment_configuration_file",
-                  help="Input .json of different experiment configurations")
+parser.add_argument(
+    "-e", "--experiment_configuration_files",
+    nargs="+",  # One flag, multiple files
+    required=True,
+    help="One or more .json files with experiment configurations"
+)
 
-(options, args) = parser.parse_args()
+args = parser.parse_args()
 
-experiment_configuration_file = options.experiment_configuration_file
-
-experiments = parse_experiment_configuration_file(experiment_configuration_file)
-
-run_experiments(experiments)
+for experiment_configuration_file in args.experiment_configuration_files:
+    experiments = parse_experiment_configuration_file(experiment_configuration_file)
+    run_experiments(experiments)
