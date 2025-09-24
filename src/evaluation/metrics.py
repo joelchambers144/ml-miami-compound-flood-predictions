@@ -10,7 +10,7 @@ trained ML models.
 # 
 #
 import pandas as pd
-from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_absolute_error, median_absolute_error, r2_score
+import sklearn.metrics as skm
 
 def calculate_central_frequency_percentage(labels, predictions, cm):
   """Find the percentage of predictions with a central frequency (CF) of less than
@@ -60,11 +60,12 @@ def evaluate_model(labels, predictions):
   metrics['CF_15CM'] = calculate_central_frequency_percentage(labels, predictions, 15)
   metrics['CF_5CM'] = calculate_central_frequency_percentage(labels, predictions, 5)
   metrics['CF_1CM'] = calculate_central_frequency_percentage(labels, predictions, 1)
-  metrics['MSE'] = mean_squared_error(labels, predictions)
-  metrics['RMSE'] = root_mean_squared_error(labels, predictions)
-  metrics['MAE'] = mean_absolute_error(labels, predictions)
-  metrics['MEDAE'] = median_absolute_error(labels, predictions)
-  metrics['R2'] = r2_score(labels, predictions)
+  metrics['MSE'] = skm.mean_squared_error(labels, predictions)
+  metrics['RMSE'] = skm.root_mean_squared_error(labels, predictions)
+  metrics['MAE'] = skm.mean_absolute_error(labels, predictions)
+  metrics['MEDAE'] = skm.median_absolute_error(labels, predictions)
+  metrics['MAPE'] = skm.mean_absolute_percentage_error(labels, predictions)
+  metrics['R2'] = skm.r2_score(labels, predictions)
 
   df_metrics = pd.DataFrame([metrics])
 
