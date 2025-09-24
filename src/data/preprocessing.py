@@ -9,7 +9,6 @@ them for machine learning (ML) training.
 #---------------------------------------------
 # 
 #
-import numpy as np
 import pandas as pd
 
 def create_input_columns(df: pd.DataFrame, input_specifications: list[dict]):
@@ -22,7 +21,7 @@ def create_input_columns(df: pd.DataFrame, input_specifications: list[dict]):
         input_specifications (list of dicts): List of dictionaries containing input column names and lag hour range
     
     Returns:
-        partitions (list of dicts): List of dictionaries containing the k-fold cross-validation splits
+        df (pd.DataFrame): Contains lagged input columns
     """
     # Create input/output arrays
     for input in input_specifications:
@@ -33,7 +32,8 @@ def create_input_columns(df: pd.DataFrame, input_specifications: list[dict]):
 
     return df
 
-def create_partitions_keras(df_data: pd.DataFrame, train_years: list, target_features: str | list[str]):
+
+def create_kfolds_keras(df_data: pd.DataFrame, train_years: list, target_features: str | list[str]):
     """
     Splits a pandas DataFrame into k-fold cross-validation splits. In the case of keras,
     a list of training-testing folds in the forms of dictionaries is created.
@@ -44,7 +44,7 @@ def create_partitions_keras(df_data: pd.DataFrame, train_years: list, target_fea
         target_features (str or list of str): List of features to be separated from the rest of the input columns and used as the target variable
     
     Returns:
-        partitions (list of dicts): List of dictionaries containing the k-fold cross-validation splits
+        kfolds (list of dicts): List of dictionaries containing the k-fold cross-validation splits
     """
     
     df_train_full = df_data.copy()
@@ -52,27 +52,27 @@ def create_partitions_keras(df_data: pd.DataFrame, train_years: list, target_fea
     df_inputs = df_train_full.drop(target_features, axis=1)
     feature_columns = df_inputs.columns
 
-    partitions = []
+    kfolds = []
     for year in train_years:
         validation_year = [year]
 
         df_valid, df_train = split_df_by_years(df_train_full, validation_year)
 
-        partition_train_years = sorted(df_train.index.year.unique())
+        fold_train_years = sorted(df_train.index.year.unique())
 
         X_valid, y_valid = get_xy(df_valid, feature_columns, target_features)
         X_train, y_train = get_xy(df_train, feature_columns, target_features)
 
-        partition = {
-            'train_years' : partition_train_years,
+        fold = {
+            'train_years' : fold_train_years,
             'train_data'  : (X_train, y_train),
             'valid_years' : validation_year,
             'valid_data'  : (X_valid, y_valid)
         }
 
-        partitions.append(partition)
+        kfolds.append(fold)
 
-    return partitions
+    return kfolds
 
 
 def get_train_test_split(df_data, experiment, test_years):
@@ -120,7 +120,7 @@ def split_df_by_years(df_data, years):
     return df_a, df_b
 
 
-def get_xy(df, feature_columns, target_features):
+def get_xy(df: pd.DataFrame, feature_columns, target_features):
     """
     Extracts the X (predictors) and y (targets) from a pandas DataFrame
     based on a list of feature columns and target feature columns passed.
@@ -134,10 +134,8 @@ def get_xy(df, feature_columns, target_features):
         X (array): Numpy array containing predictor samples in the same order as the list of feature_columns passed
         y (array): Numpy array containing targets for each predictor sample
     """
-    y = np.array(df[target_features]).ravel()
-    X = df[feature_columns]
-
-    X = np.array(X)
+    y = df[target_features].to_numpy().ravel()
+    X = df[feature_columns].to_numpy()
 
     return X, y
 
@@ -157,119 +155,63 @@ def create_lagged_columns(df, target_column, lag_range):
     Returns:
         pd.DataFrame: A DataFrame with added lagged columns.
     """
-    for lag in range(lag_range[0], lag_range[1] + 1):  # Include upper bound of range
-        if lag != 0:  # Avoid creating a lag for 0 as it's the same as the original column
+    
+    # Include upper bound of range by adding +1
+    lags = range(lag_range[0], lag_range[1] + 1)
 
-            # NOTE:: For the shift itself, the sign of the lag is flipped.
-            # Reason: Shift treats the lags differently compared to how we treat them.
-            # For example: When we ask for a shift of -24, we want the values 24 hours in the past.
-            # However, shift will make it such that it instead gives you the values 24 hours in the future.
-            # So, by flipping the sign the user will receive their desired result.
-            df[f'{target_column}_t{"" if lag < 0 else "+"}{lag}'] = df[target_column].shift(-lag)
+    # Create lag columns first before adding to the existing df to
+    # gain better performance
+    # NOTE:: For the shift itself, the sign of the lag is flipped.
+    # Reason: Shift treats the lags differently compared to how we treat them.
+    # For example: When we ask for a shift of -24, we want the values 24 hours in the past.
+    # However, shift will make it such that it instead gives you the values 24 hours in the future.
+    # So, by flipping the sign the user will receive their desired result.
+    new_cols = {
+        f'{target_column}_t{"" if lag < 0 else "+"}{lag}': df[target_column].shift(-lag)
+        for lag in lags
+        if lag != 0
+    }
 
-    return df
+    # Add the new lagged columns to the existing df
+    df_lagged = pd.concat([df, pd.DataFrame(new_cols, index=df.index)], axis=1)
+
+    return df_lagged
 
 
 def extract_time_index(col_name):
+    """
+    Extracts the lag hour from the column name based on the format '_t[+ || -]{lag hour}'.
+    If no '_t' suffix, then lag hour is 0.
+
+    Parameters:
+        col_name (str): Name of the column to extract the lag hour from
+
+    Returns:
+        int: Returns int found in column name. If no '_t' returns 0
+    """
     if '_t' in col_name:
-        # Extract the number after 't'
+        # Extract the number after 't'. If positive, remove '+' symbol
         return int(col_name.split('_t')[-1].replace('+', ''))
     return 0
 
 
-def order_input_arrays(df, column_prefixes):
-  sorted_columns = []
-  for column_prefix in column_prefixes:
-    sorted_columns = sorted_columns + sorted([col for col in df.columns if col.startswith(column_prefix)], key=extract_time_index)
-
-  df_ordered = df[sorted_columns]
-
-  return df_ordered
-
-
-
-
-
-
-# NOTE:: Functions below are left behind for reference. Will be deleted eventually.
-
-
-def extract_input_output_arrays(df, job_specification):
-  """
-  Here a dictionary is created for the given dataset. This dictionary contains:
-  - The input array
-  - The output array
-  - The ordered input column names
-  - And the original datetime indices for plotting the interactive time series later
-
-  Parameters:
-        df (pd.DataFrame): DataFrame containing dataset.
-
-        job_specification (dict): Dictionary containing the job specification
-
-  Returns:
-      dict: Dictionary containing the input array, output array, ordered input columns, and datetime index
-  """
-  input_specifications = job_specification['input_specifications']
-  target_column = job_specification['target_column']
-
-  for input in input_specifications:
-      df = create_lagged_columns(df, input['column'], input['lag_range'])
-
-  df.dropna(inplace=True)
-
-  target_array = df[target_column].values
-
-  # Save datetimes of df for plotting purposes later
-  datetime_index = df.index
-
-  # Remove the target column from df before creating ordered input arrays
-  df_inputs = df.drop(columns=[target_column])
-
-  column_prefixes = job_specification['column_prefixes']
-
-  df_inputs_ordered = order_input_arrays(df_inputs, column_prefixes)
-
-  # Ordered input column names saved for plotting purposes later
-  ordered_input_list = df_inputs_ordered.columns.tolist()
-
-  input_array = df_inputs_ordered.values
-
-  input_output_dict = {'input_array': input_array,
-                       'target_array': target_array,
-                       'ordered_input_list': ordered_input_list,
-                       'datetime_index': datetime_index}
-
-  return input_output_dict
-
-
-def extract_input_output_arrays2(df, experiment):
+def order_input_arrays(df, column_names):
     """
-    Here a dictionary is created for the given dataset. This dictionary contains:
-    - The input array
-    - The output array
-    - The ordered input column names
-    - And the original datetime indices for plotting the interactive time series later
+    Takes a list of column names and sorts the columns in the DF based on:
+        - The order passed in the column list
+        - Ascending order by lag hour
 
     Parameters:
-        df (pd.DataFrame): DataFrame containing dataset.
-
-        job_specification (dict): Dictionary containing the job specification
+        df (pd.DataFrame): The input DataFrame.
+        column_names (list): Column names in the desired order to be sorted by
 
     Returns:
-        dict: Dictionary containing the input array, output array, ordered input columns, and datetime index
+        pd.DataFrame: A DataFrame with columns sorted by input order and lag hour (ascending).
     """
-    target_column = experiment['target_column']
+    sorted_columns = []
+    for column_prefix in column_names:
+        sorted_columns = sorted_columns + sorted([col for col in df.columns if col.startswith(column_prefix)], key=extract_time_index)
 
-    target_array = df[target_column].values
+    df_ordered = df[sorted_columns]
 
-    # Remove the target column from df before creating ordered input arrays
-    df_inputs = df.drop(columns=[target_column])
-
-    column_prefixes = experiment['column_prefixes']
-
-    df_inputs_ordered = order_input_arrays(df_inputs, column_prefixes)
-
-    input_array = df_inputs_ordered.values
-
-    return input_array, target_array
+    return df_ordered
