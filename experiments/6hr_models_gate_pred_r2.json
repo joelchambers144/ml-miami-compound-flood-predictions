@@ -3,7 +3,7 @@
     [
         {
             "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_GATE_2017_2024.csv",
-            "experiment_name": "6hr_gate_measured_r2_grid",
+            "experiment_name": "6hr_gate_pred_r2_grid",
             "lead_time": 6,
             "target_column": "gwl",
 
