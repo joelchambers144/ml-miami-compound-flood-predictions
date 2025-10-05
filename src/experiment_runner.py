@@ -39,7 +39,12 @@ def experiment_pipeline(experiment, df_data, model_architecture, results_directo
 
     # Order input columns by given column prefix names and in ascending order based on lead time 
     column_prefixes = [input['column'] for input in experiment.input_specifications]
+    
     df_inputs_ordered = order_input_arrays(df_inputs, column_prefixes)
+
+    # If target column is not in input specifications then target column must be added manually
+    if experiment.target_column not in column_prefixes:
+        df_inputs_ordered[f'{experiment.target_column}_t+{experiment.lead_time}'] = df_inputs[f'{experiment.target_column}_t+{experiment.lead_time}']
 
     # Split up test year from rest of data
     df_test, df_train = split_df_by_years(df_inputs_ordered, experiment.test_years)
