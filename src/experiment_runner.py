@@ -44,7 +44,7 @@ def experiment_pipeline(experiment, df_data, model_architecture, results_directo
 
     # If target column is not in input specifications then target column must be added manually
     if experiment.target_column not in column_prefixes:
-        df_inputs_ordered[f'{experiment.target_column}_t+{experiment.lead_time}'] = df_inputs[f'{experiment.target_column}_t+{experiment.lead_time}']
+        df_inputs_ordered[f'{experiment.target_column}_t+{experiment.lead_time}'] = df_inputs[f'{experiment.target_column}_t+{experiment.lead_time}'].copy()
 
     # Split up test year from rest of data
     df_test, df_train = split_df_by_years(df_inputs_ordered, experiment.test_years)
