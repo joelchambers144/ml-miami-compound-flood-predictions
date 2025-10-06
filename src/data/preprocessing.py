@@ -92,11 +92,12 @@ def get_train_test_split(df_data, experiment, test_years):
     """
     df_test, df_train = split_df_by_years(df_data, test_years)
 
-    df_inputs = df_train.drop(experiment.target_column, axis=1)
+    target_column_formatted = f'{experiment.target_column}_t+{experiment.lead_time}'
+    df_inputs = df_train.drop(target_column_formatted, axis=1)
     feature_columns = df_inputs.columns
 
-    X_train, y_train = get_xy(df_train, feature_columns, experiment.target_column)
-    X_test, y_test = get_xy(df_test, feature_columns, experiment.target_column)
+    X_train, y_train = get_xy(df_train, feature_columns, target_column_formatted)
+    X_test, y_test = get_xy(df_test, feature_columns, target_column_formatted)
 
     return X_train, y_train, X_test, y_test
 
