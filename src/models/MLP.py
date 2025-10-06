@@ -5,12 +5,14 @@ from keras.models import Sequential, save_model, load_model
 from keras.optimizers import Adam
 from keras_tuner import GridSearch, Objective
 
+from functools import partial
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import time
 
 from src.data.preprocessing import create_kfolds_keras, get_train_test_split
+import src.evaluation.metrics as m
 from src.utils.file_operations import ensure_dir
 
 class MLPRegressor():
@@ -18,7 +20,7 @@ class MLPRegressor():
     # Scores that need to be maximized, not minimized
     metrics_to_max = ['r2_score', 'mean_absolute_percentage_error', 'cf_percentage_5cm', 'cf_percentage_10cm', 'cf_percentage_15cm']
 
-    def build_model(self, hp=None, params=None):
+    def build_model(self, hp=None, params=None, loss_function = 'mean_squared_error'):
         """
         Builds a Keras Sequential model.
         
@@ -51,9 +53,12 @@ class MLPRegressor():
         # Output Layer
         model.add(Dense(1, activation='sigmoid'))
 
+        if loss_function == 'weighted_mse':
+            loss_function = m.weighted_mse(0.5, 20) # GWLs > 0.5m have 20x more weight
+
         # Compile
         model.compile(
-            loss='mean_squared_error',
+            loss=loss_function,
             optimizer=Adam(learning_rate=learning_rate),
             metrics=[
                 km.MeanSquaredError(), km.RootMeanSquaredError(), km.MeanAbsoluteError(),
@@ -77,7 +82,8 @@ class MLPRegressor():
         kfolds = create_kfolds_keras(df_data, experiment.train_years, target_column_formatted)
         
         # Perform k-fold cross-validation and return metrics for all folds
-        cv_metrics = self.kfold_cross_validation(kfolds, results_directory, objective = f'val_{objective}', direction = direction)
+        cv_metrics = self.kfold_cross_validation(kfolds, results_directory, loss_function = experiment.loss_function,
+                                                 objective = f'val_{objective}', direction = direction)
 
         # Find the trial ID with the best metric score on average over all folds
         best_trial_id = self.find_best_trial_id(cv_metrics, metric = f'val_{objective}', direction = direction)
@@ -96,7 +102,8 @@ class MLPRegressor():
         return best_hyperparams
     
 
-    def kfold_cross_validation(self, kfolds, results_directory, objective = 'val_mean_squared_error', direction = 'min'):
+    def kfold_cross_validation(self, kfolds, results_directory, loss_function = 'mean_squared_error',
+                               objective = 'val_mean_squared_error', direction = 'min'):
         tuning_results_directory = results_directory + 'tuning/'
 
         df_metrics_list = []
@@ -111,9 +118,9 @@ class MLPRegressor():
             print(f'Fold Validation Year: {valid_years[0]}')
 
             start = time.time()
-            df_metrics = self.tune_model(X_train, y_train, X_valid, y_valid, 
-                                          tuning_results_directory, tuning_project_name,
-                                          objective = objective, direction = direction)
+            df_metrics = self.tune_model(X_train, y_train, X_valid, y_valid, tuning_results_directory, 
+                                         tuning_project_name, loss_function = loss_function, 
+                                         objective = objective, direction = direction)
             end = time.time()
 
             print(f"Tuning took {(end - start)/60:.2f} minutes")
@@ -130,7 +137,7 @@ class MLPRegressor():
         
     
     def tune_model(self, x_train, y_train, x_val, y_val, directory, project_name,
-                 objective='val_mean_squared_error', direction='min',
+                 loss_function = 'mean_squared_error', objective='val_mean_squared_error', direction='min',
                  batch_size=64, validation_batch_size=64, epochs=2000, 
                  patience=20):
         """
@@ -150,7 +157,7 @@ class MLPRegressor():
         """
 
         self.tuner = GridSearch(
-            hypermodel=self.build_model,
+            hypermodel=partial(self.build_model, loss_function = loss_function),
             objective=Objective(objective, direction=direction),
             seed=42,
             directory=directory,
@@ -246,14 +253,15 @@ class MLPRegressor():
 
         # Train ensemble models using best hyperparameters
         ensemble_models = self.train_ensemble(X_train, y_train, X_valid, y_valid, best_hyperparams, 
-                                              model_directory, objective = f'val_{objective}', direction = direction)
+                                              model_directory, loss_function = experiment.loss_function, 
+                                              objective = f'val_{objective}', direction = direction)
 
         return ensemble_models
     
 
     def train_ensemble(self, X_train, y_train, X_valid, y_valid, best_hyperparams, model_directory, n_models=5,
-                       objective = 'val_mean_squared_error', direction = 'max', epochs = 10000, batch_size = 64, 
-                       validation_batch_size = 64, patience = 20):
+                       loss_function = 'mean_squared_error', objective = 'val_mean_squared_error', direction = 'max', 
+                       epochs = 10000, batch_size = 64, validation_batch_size = 64, patience = 20):
         models = []
         for i in range(n_models):
             model_file_path = model_directory + f'hypermodel{i+1}.h5'
@@ -265,7 +273,7 @@ class MLPRegressor():
                 tf.random.set_seed(i)
 
                 # Build model with optimal hyperparameters from k-fold cross-validation
-                model = self.build_model(params = best_hyperparams)
+                model = self.build_model(params = best_hyperparams, loss_function = loss_function)
 
                 # Define callbacks
                 early_stopping = EarlyStopping(monitor = f'{objective}', mode = direction, patience = patience, 
