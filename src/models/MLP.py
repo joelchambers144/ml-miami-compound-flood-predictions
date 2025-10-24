@@ -18,7 +18,7 @@ from src.utils.file_operations import ensure_dir
 class MLPRegressor():
 
     # Scores that need to be maximized, not minimized
-    metrics_to_max = ['r2_score', 'mean_absolute_percentage_error', 'cf_percentage_5cm', 'cf_percentage_10cm', 'cf_percentage_15cm']
+    metrics_to_max = ['r2_score', 'mean_absolute_percentage_error']
 
     def build_model(self, hp=None, params=None, loss_function = 'mean_squared_error'):
         """
@@ -69,7 +69,8 @@ class MLPRegressor():
         return model
 
     
-    def hyperparameter_tuning(self, df_data, experiment, results_directory):
+    def model_training(self, df_data, experiment, results_directory):
+        # Set objective metric and direction
         direction = 'min'
         objective = experiment.objective_metric
 
@@ -99,7 +100,10 @@ class MLPRegressor():
         # Extract best hyperparameters from first row of the best metrics df
         best_hyperparams = df_best_trial.loc[df_best_trial.index[0], ['num_layers', 'neurons', 'lr']].to_dict()
 
-        return best_hyperparams
+        # Train final model ensemble using full training set and best hyperparameters
+        model_ensemble = self.train_final_models(df_data, experiment, best_hyperparams, results_directory)
+
+        return model_ensemble
     
 
     def kfold_cross_validation(self, kfolds, results_directory, loss_function = 'mean_squared_error',
@@ -238,7 +242,7 @@ class MLPRegressor():
         return best_trial_id
     
 
-    def train_final_model(self, df_data, experiment, best_hyperparams, results_directory):
+    def train_final_models(self, df_data, experiment, best_hyperparams, results_directory):
         # Use 2023 as validation year for early stopping
         X_train, y_train, X_valid, y_valid = get_train_test_split(df_data, experiment, [2023])
 
@@ -305,7 +309,7 @@ class MLPRegressor():
         # Average them
         ensemble_mean = np.mean(ensemble_preds, axis=0)
 
-        # Build dictionary
+        # Build dictionary to save predictions to a file later
         results = {
             'predictions': ensemble_mean
         }

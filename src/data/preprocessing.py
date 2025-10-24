@@ -39,7 +39,7 @@ def create_kfolds_keras(df_data: pd.DataFrame, train_years: list, target_feature
     a list of training-testing folds in the forms of dictionaries is created.
     
     Parameters:
-        df_data (pd.DataFrame): DataFrame with 'date' column of type datetime
+        df_data (pd.DataFrame): DataFrame with datetime index
         train_years (list): List of years to be used as a test year in the cross-validation splits
         target_features (str or list of str): List of features to be separated from the rest of the input columns and used as the target variable
     
@@ -73,6 +73,33 @@ def create_kfolds_keras(df_data: pd.DataFrame, train_years: list, target_feature
         kfolds.append(fold)
 
     return kfolds
+
+
+def create_partitions_sklearn(df, fold_years):
+    """
+    Splits a pandas DataFrame into k-fold cross-validation splits. In the case of scikit-learn,
+    the indices of the samples are saved for each split.
+    
+    Parameters:
+        df_data (pd.DataFrame): DataFrame with datetime index
+        fold_years (list): List of years to be used as a test year in the cross-validation splits
+    
+    Returns:
+        custom_folds (list of arrays): List of numpy arrays containing the indices for k-fold cross-validation splits
+    """
+    custom_folds = []
+    for val_year in fold_years:
+        # Get datetime index splits
+        train_idx_dt = df[df.index.year != val_year].index
+        val_idx_dt   = df[df.index.year == val_year].index
+
+        # Convert datetime indices to integer positions (required by GridSearchCV)
+        train_idx = df.index.get_indexer(train_idx_dt)
+        val_idx   = df.index.get_indexer(val_idx_dt)
+
+        custom_folds.append((train_idx, val_idx))
+        
+    return custom_folds
 
 
 def get_train_test_split(df_data, experiment, test_years):

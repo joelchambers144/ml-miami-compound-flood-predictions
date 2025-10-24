@@ -32,11 +32,6 @@ def run_experiments(experiments: list):
         ensure_dir(test_results_directory)
         test_results_path = test_results_directory + 'results.csv'
 
-        # Check if test results already exist for experiment. If yes, continue on to next experiment
-        if os.path.exists(test_results_path):
-            print(f'Test results exist for experiment: {experiment.experiment_name}. Delete results to rerun experiment.')
-            continue
-
         # Read in the data file from the experiment object
         df_data = pd.read_csv(experiment.data_file_path, index_col = 0, parse_dates = True)
         
