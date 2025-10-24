@@ -17,7 +17,7 @@
                 {"column": "gate2", "lag_range": [-24, 3]}
             ],
 
-            "model_architectures": ["MLP"],
+            "model_architectures": ["LR", "RF", "MLP"],
             "train_years": [2017, 2018, 2019, 2020, 2021, 2022, 2023],
             "test_years": [2024],
             "loss_function": "mean_squared_error",
