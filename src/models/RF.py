@@ -42,7 +42,7 @@ class RFRegressor():
             scoring=scoring,
             refit=objective,
             return_train_score=True,
-            n_jobs=-1,
+            n_jobs=None,
             verbose=0
         )
 
