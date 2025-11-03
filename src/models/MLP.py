@@ -51,7 +51,7 @@ class MLPRegressor():
             model.add(Dropout(0.4))
 
         # Output Layer
-        model.add(Dense(1, activation='sigmoid'))
+        model.add(Dense(1, activation='linear'))
 
         if loss_function == 'weighted_mse':
             loss_function = m.weighted_mse(0.5, 20) # GWLs > 0.5m have 20x more weight
@@ -306,12 +306,12 @@ class MLPRegressor():
         # Make predictions from each model in the ensemble
         ensemble_preds = np.array([model.predict(X, verbose=0).flatten() for model in models])
 
-        # Average them
-        ensemble_mean = np.mean(ensemble_preds, axis=0)
+        # Take the median of the ensemble predictions
+        ensemble_median = np.median(ensemble_preds, axis=0)
 
         # Build dictionary to save predictions to a file later
         results = {
-            'predictions': ensemble_mean
+            'predictions': ensemble_median
         }
 
         # Add predictions for each ensemble member to dictionary
