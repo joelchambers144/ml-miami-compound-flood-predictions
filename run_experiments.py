@@ -17,6 +17,16 @@ import argparse
 import pandas as pd
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+use_gpu = os.getenv("USE_GPU")
+
+# If use_gpu is false, then just use CPU. Otherwise available GPUs are used
+if use_gpu == 'false':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 from src.experiment.experiment_parser import parse_experiment_configuration_file
 from src.experiment_runner import experiment_pipeline
 from src.utils.file_operations import ensure_dir
