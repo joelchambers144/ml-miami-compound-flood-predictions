@@ -3,7 +3,7 @@
     [
         {
             "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_GATE_2017_2024.csv",
-            "experiment_name": "3hr_perfect_prog_gate_new",
+            "experiment_name": "3hr_measured_new",
             "lead_time": 3,
             "target_column": "gwl",
 
@@ -13,8 +13,8 @@
                 {"column": "rain", "lag_range": [-24, 0]},
                 {"column": "stgH", "lag_range": [-24, 0]},
                 {"column": "stgT", "lag_range": [-24, 0]},
-                {"column": "gate1", "lag_range": [-24, 3]},
-                {"column": "gate2", "lag_range": [-24, 3]}
+                {"column": "gate1", "lag_range": [-24, 0]},
+                {"column": "gate2", "lag_range": [-24, 0]}
             ],
 
             "model_architectures": ["LR", "RF", "MLP"],
