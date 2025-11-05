@@ -255,15 +255,20 @@ class MLPRegressor():
         if objective in self.metrics_to_max:
             direction = 'max'
 
+        start = time.time()
+        
         # Train ensemble models using best hyperparameters
         ensemble_models = self.train_ensemble(X_train, y_train, X_valid, y_valid, best_hyperparams, 
                                               model_directory, loss_function = experiment.loss_function, 
                                               objective = f'val_{objective}', direction = direction)
+        end = time.time()
+
+        print(f"Ensemble training took {(end - start)/60:.2f} minutes")
 
         return ensemble_models
     
 
-    def train_ensemble(self, X_train, y_train, X_valid, y_valid, best_hyperparams, model_directory, n_models=5,
+    def train_ensemble(self, X_train, y_train, X_valid, y_valid, best_hyperparams, model_directory, n_models=30,
                        loss_function = 'mean_squared_error', objective = 'val_mean_squared_error', direction = 'max', 
                        epochs = 10000, batch_size = 64, validation_batch_size = 64, patience = 20):
         models = []
