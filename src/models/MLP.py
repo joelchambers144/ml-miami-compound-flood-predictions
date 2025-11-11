@@ -1,5 +1,5 @@
 from keras.callbacks import EarlyStopping, TensorBoard
-from keras.layers import Dense, Dropout
+from keras.layers import Dense, Dropout, Lambda
 import keras.metrics as km
 from keras.models import Sequential, save_model, load_model
 from keras.optimizers import Adam
@@ -12,6 +12,7 @@ import tensorflow as tf
 import time
 
 from src.data.preprocessing import create_kfolds_keras, get_train_test_split
+from src.data.normalization import get_y_bounds
 import src.evaluation.metrics as m
 from src.utils.file_operations import ensure_dir
 
@@ -33,11 +34,13 @@ class MLPRegressor():
         if hp is not None:
             num_layers = hp.Choice('num_layers', (1, 2, 3))
             neurons = hp.Choice('neurons', (50, 100, 200))
-            learning_rate = hp.Choice('lr', (0.1, 0.01, 1e-3, 1e-4, 1e-5))
+            learning_rate = hp.Choice('lr', (0.01, 1e-3, 1e-4, 1e-5))
+            activation_function = hp.Choice('activation', ('relu', 'tanh'))
         elif params is not None:
             num_layers = params['num_layers']
             neurons = params['neurons']
             learning_rate = params['lr']
+            activation_function = params['activation']
         else:
             raise ValueError("Either 'hp' or 'params' must be provided.")
 
@@ -45,13 +48,17 @@ class MLPRegressor():
 
         for i in range(num_layers):
             # Hidden Layer
-            model.add(Dense(neurons, kernel_initializer='he_normal', activation='relu'))
+            model.add(Dense(neurons, kernel_initializer='he_normal', activation=activation_function))
 
             # Dropout
             model.add(Dropout(0.4))
 
         # Output Layer
-        model.add(Dense(1, activation='linear'))
+        model.add(Dense(1, activation='sigmoid'))
+
+        # Denormalize the sigmoid output (based on full training set max, min)
+        y_min, y_max = get_y_bounds()
+        model.add(Lambda(lambda x: x * (y_max - y_min) + y_min))
 
         if loss_function == 'weighted_mse':
             loss_function = m.weighted_mse(0.5, 20) # GWLs > 0.5m have 20x more weight
@@ -98,7 +105,7 @@ class MLPRegressor():
         df_best_trial.to_csv(cv_metrics_path)
 
         # Extract best hyperparameters from first row of the best metrics df
-        best_hyperparams = df_best_trial.loc[df_best_trial.index[0], ['num_layers', 'neurons', 'lr']].to_dict()
+        best_hyperparams = df_best_trial.loc[df_best_trial.index[0], ['num_layers', 'neurons', 'lr', 'activation']].to_dict()
 
         # Train final model ensemble using full training set and best hyperparameters
         model_ensemble = self.train_final_models(df_data, experiment, best_hyperparams, results_directory)

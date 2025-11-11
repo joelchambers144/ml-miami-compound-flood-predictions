@@ -18,6 +18,7 @@ experiment pipeline is run consisting of the following steps:
 import pandas as pd
 
 from src.data.preprocessing import get_xy, split_df_by_years, create_input_columns, order_input_arrays, create_lagged_columns
+from src.data.normalization import set_y_bounds
 import src.evaluation.metrics as m
 from src.models.MLP import MLPRegressor
 from src.models.LR import LinearRegressor
@@ -46,6 +47,14 @@ def experiment_pipeline(experiment, df_data, model_architecture, results_directo
         # Create input DataFrame with input columns ordered by given column prefix 
         # names and in ascending order based on lead time
         df_inputs_ordered = create_input_dataframe(df_data, experiment)
+
+        if model_architecture == 'MLP':
+            # Assign global max & min. Max increased by 20% to handle extrapolation
+            global_min = df_data[experiment.target_column].min()
+            global_max = df_data[experiment.target_column].max()
+
+            # Set global max and min of target variable
+            set_y_bounds(global_min, global_max)
 
         # Split up test year from rest of data
         df_test, df_train = split_df_by_years(df_inputs_ordered, experiment.test_years)
