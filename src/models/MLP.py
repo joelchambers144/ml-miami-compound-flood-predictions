@@ -34,7 +34,7 @@ class MLPRegressor():
         if hp is not None:
             num_layers = hp.Choice('num_layers', (1, 2, 3))
             neurons = hp.Choice('neurons', (50, 100, 200))
-            learning_rate = hp.Choice('lr', (0.01, 1e-3, 1e-4, 1e-5))
+            learning_rate = hp.Choice('lr', (1e-3, 1e-4, 1e-5))
             activation_function = hp.Choice('activation', ('relu', 'tanh'))
         elif params is not None:
             num_layers = params['num_layers']
@@ -276,7 +276,7 @@ class MLPRegressor():
     
 
     def train_ensemble(self, X_train, y_train, X_valid, y_valid, best_hyperparams, model_directory, n_models=30,
-                       loss_function = 'mean_squared_error', objective = 'val_mean_squared_error', direction = 'max', 
+                       loss_function = 'mean_squared_error', objective = 'val_mean_squared_error', direction = 'min', 
                        epochs = 10000, batch_size = 64, validation_batch_size = 64, patience = 20):
         models = []
         for i in range(n_models):
