@@ -56,8 +56,14 @@ class MLPRegressor():
         # Output Layer
         model.add(Dense(1, activation='sigmoid'))
 
-        # Denormalize the sigmoid output (based on full training set max, min)
+        # Get max and min of full training set
         y_min, y_max = get_y_bounds()
+
+        # Values must be floats in order for the JSON h5 file to be serializable
+        y_min = float(y_min)
+        y_max = float(y_max)
+
+        # # Denormalize the sigmoid output (based on full training set max, min)
         model.add(Lambda(lambda x: x * (y_max - y_min) + y_min))
 
         if loss_function == 'weighted_mse':
