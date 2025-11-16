@@ -32,10 +32,10 @@ class MLPRegressor():
         One of hp or params must be provided.
         """
         if hp is not None:
-            num_layers = hp.Choice('num_layers', (1, 2, 3))
-            neurons = hp.Choice('neurons', (50, 100, 200))
-            learning_rate = hp.Choice('lr', (1e-3, 1e-4, 1e-5))
-            activation_function = hp.Choice('activation', ('relu', 'tanh'))
+            num_layers = hp.Choice('num_layers', [1, 2])
+            neurons = hp.Choice('neurons', [50, 100, 200])
+            learning_rate = hp.Choice('lr', [1e-3, 1e-4, 1e-5])
+            activation_function = hp.Choice('activation', ['relu'])
         elif params is not None:
             num_layers = params['num_layers']
             neurons = params['neurons']
