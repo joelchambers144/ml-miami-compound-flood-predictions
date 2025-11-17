@@ -1,0 +1,27 @@
+{
+    "experiments": 
+    [
+        {
+            "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_GATE_2017_2024.csv",
+            "experiment_name": "24hr_perfect_prog_wls_sigmoid",
+            "lead_time": 24,
+            "target_column": "gwl",
+
+            "input_specifications": [
+                {"column": "gwl", "lag_range": [-24, 0]},
+                {"column": "wl", "lag_range": [-24, 24]},
+                {"column": "rain", "lag_range": [-24, 0]},
+                {"column": "stgH", "lag_range": [-24, 0]},
+                {"column": "stgT", "lag_range": [-24, 0]},
+                {"column": "gate1", "lag_range": [-24, 0]},
+                {"column": "gate2", "lag_range": [-24, 0]}
+            ],
+
+            "model_architectures": ["LR", "RF", "MLP"],
+            "train_years": [2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            "test_years": [2024],
+            "loss_function": "mean_squared_error",
+            "objective_metric": "mean_squared_error"
+        }
+    ]
+}
