@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(py|ipynb\\)$\")",
+      "Bash(conda activate:*)",
+      "Bash(conda run -n conda-flood python -c \":*)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/jcham070/miniforge3/**)",
+      "Read(//Users/jcham070/anaconda3/**)",
+      "Read(//Users/jcham070/miniconda3/**)",
+      "Bash(source ~/.zshrc)",
+      "Bash(conda info:*)",
+      "Bash(mamba info:*)",
+      "Bash(/Users/jcham070/miniconda3/envs/conda-flood/bin/python -c \"import pandas; print\\(pandas.__version__\\)\")",
+      "Bash(/Users/jcham070/miniconda3/envs/conda-flood/bin/python process_flow_data.py)"
+    ],
+    "additionalDirectories": [
+      "/Users/jcham070/Documents/GitHub/ml-miami-compound-flood-predictions/data/FLOW"
+    ]
+  }
+}

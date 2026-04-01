@@ -1,0 +1,28 @@
+{
+    "experiments":
+    [
+        {
+            "data_file_path": "data/Merged/Miami_GWL_WL_RAIN_GATE_FLOW_2017_2024.csv",
+            "experiment_name": "test_experiment_flow",
+            "lead_time": 3,
+            "target_column": "gwl",
+
+            "input_specifications": [
+                {"column": "gwl", "lag_range": [-24, 0]},
+                {"column": "wl", "lag_range": [-24, 0]},
+                {"column": "rain", "lag_range": [-24, 0]},
+                {"column": "stgH", "lag_range": [-24, 0]},
+                {"column": "stgT", "lag_range": [-24, 0]},
+                {"column": "gate1", "lag_range": [-24, 0]},
+                {"column": "gate2", "lag_range": [-24, 0]},
+                {"column": "flow", "lag_range": [-24, 0]}
+            ],
+
+            "model_architectures": ["LR", "RF", "MLP"],
+            "train_years": [2017, 2018],
+            "test_years": [2024],
+            "loss_function": "mean_squared_error",
+            "objective_metric": "loss"
+        }
+    ]
+}
