@@ -1,0 +1,16 @@
+Experiment,Model,CF 15cm (%),CF 5cm (%),CF 1cm (%),RMSE,MAE,R2
+Baseline: Perfect Prog All Inputs,LR,99.24,90.54,54.72,0.0386,0.0191,0.891
+Baseline: Perfect Prog All Inputs,RF,98.79,89.26,52.88,0.0428,0.0211,0.866
+Baseline: Perfect Prog All Inputs,MLP,99.82,93.64,62.26,0.0274,0.0149,0.945
+Flow: All Inputs,LR,99.91,97.08,67.88,0.0187,0.0105,0.975
+Flow: All Inputs,RF,99.08,90.98,57.9,0.0351,0.0181,0.91
+Flow: All Inputs,MLP,96.59,80.6,48.91,0.0599,0.0312,0.738
+Flow: GWL + WL + Flow,LR,98.92,89.21,44.02,0.0462,0.0229,0.844
+Flow: GWL + WL + Flow,RF,98.91,89.73,53.66,0.0385,0.0199,0.892
+Flow: GWL + WL + Flow,MLP,49.82,44.03,32.13,0.2326,0.1589,-2.949
+Flow: GWL + Flow,LR,98.95,88.85,47.56,0.0463,0.0227,0.843
+Flow: GWL + Flow,RF,98.89,89.92,53.51,0.0375,0.0198,0.897
+Flow: GWL + Flow,MLP,95.54,77.25,45.75,0.0845,0.0391,0.478
+Flow: GWL + Rain + Gates,LR,99.2,91.67,58.4,0.0371,0.0179,0.9
+Flow: GWL + Rain + Gates,RF,98.96,89.59,52.82,0.0377,0.02,0.896
+Flow: GWL + Rain + Gates,MLP,49.81,44.0,38.04,0.2326,0.158,-2.948
