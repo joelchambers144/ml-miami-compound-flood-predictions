@@ -9,11 +9,12 @@ Usage:
 import pandas as pd
 
 experiments = [
-    ("Baseline: Perfect Prog All Inputs", "results/24hr_perfect_prog_all_inputs_sigmoid"),
-    ("Flow: All Inputs",                  "results/24hr_flow_all_inputs"),
-    ("Flow: GWL + WL + Flow",             "results/24hr_flow_gwl_wl_flow"),
-    ("Flow: GWL + Flow",                  "results/24hr_flow_gwl_flow"),
-    ("Flow: GWL + Rain + Gates",          "results/24hr_flow_gwl_rain_gates"),
+    ("Baseline: Perfect Prog All Inputs",         "results/24hr_perfect_prog_all_inputs_sigmoid"),
+    ("Flow: All Inputs",                           "results/24hr_flow_all_inputs"),
+    ("Flow: All Inputs (no STG prog)",             "results/24hr_flow_all_inputs_noSTG"),
+    ("Flow: GWL + WL + Flow",                      "results/24hr_flow_gwl_wl_flow"),
+    ("Flow: GWL + Flow",                           "results/24hr_flow_gwl_flow"),
+    ("Flow: GWL + Rain + Gates",                   "results/24hr_flow_gwl_rain_gates"),
 ]
 
 models = ["LR", "RF", "MLP"]
