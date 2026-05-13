@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\jcham070\\\\ml-miami-compound-flood-predictions\\\\notebooks\" -File | Select-Object Name, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\){\"Dir\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Test-Path \"C:\\\\Users\\\\jcham070\\\\ml-miami-compound-flood-predictions\\\\CLAUDE.md\" && \\(Get-Content \"C:\\\\Users\\\\jcham070\\\\ml-miami-compound-flood-predictions\\\\CLAUDE.md\" | Measure-Object -Line\\).Lines)",
+      "Bash(python3)",
+      "Bash(cd /mnt/c/Users/jcham070/ml-miami-compound-flood-predictions && head -20 CLAUDE.md)",
+      "Read(//mnt/c/Users/jcham070/**)",
+      "Bash(xargs grep -l \"FFCA_results\\\\|report.json\\\\|report.md\")",
+      "Bash(cd \"/c/Users/jcham070/ml-miami-compound-flood-predictions\" && find . -type f \\\\\\( -name \"*.py\" -o -name \"*.ipynb\" \\\\\\) -newer \"CLAUDE.md\" 2>/dev/null)",
+      "Read(//c/c/Users/jcham070/**)",
+      "Bash(xargs -0 ls -lt)",
+      "Bash(xargs wc -l)",
+      "Bash(conda run -n conda-flood python -c ' *)",
+      "Bash(cat)",
+      "Bash(conda run *)",
+      "Bash(grep -v \"^$\\\\|WARNING\\\\|UserWarning\\\\|w_\\\\|FutureWarning\\\\|DeprecationWarning\\\\|import\\\\|tensorflow\")",
+      "Bash(cat > *)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}
