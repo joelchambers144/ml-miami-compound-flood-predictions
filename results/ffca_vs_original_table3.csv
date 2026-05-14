@@ -1,0 +1,41 @@
+Model,Lead (h),Variant,N_feat,N_models,CF_15CM,CF_5CM,CF_1CM,RMSE_cm,R2
+Measurements Only,3,Original,-1,30,99.8,98.5,79.3,1.8,0.98
+Measurements Only,3,FFCA,66,30,99.9,98.5,80.5,1.7,0.98
+Measurements Only,6,Original,-1,30,99.7,96.7,72.4,2.6,0.95
+Measurements Only,6,FFCA,60,30,99.7,96.6,71.6,2.6,0.95
+Measurements Only,12,Original,-1,30,99.5,94.6,64.3,3.7,0.9
+Measurements Only,12,FFCA,51,30,99.4,94.7,65.6,3.7,0.9
+Measurements Only,24,Original,-1,30,99.0,89.7,53.2,5.0,0.82
+Measurements Only,24,FFCA,58,30,98.9,89.7,52.5,5.0,0.82
+Predicted Ocean Water Levels,3,Original,-1,30,99.8,98.6,79.6,1.7,0.98
+Predicted Ocean Water Levels,3,FFCA,57,30,99.9,98.6,81.2,1.6,0.98
+Predicted Ocean Water Levels,6,Original,-1,30,99.7,96.8,72.4,2.6,0.95
+Predicted Ocean Water Levels,6,FFCA,44,30,99.7,96.4,72.0,2.7,0.95
+Predicted Ocean Water Levels,12,Original,-1,30,99.5,95.0,65.3,3.6,0.9
+Predicted Ocean Water Levels,12,FFCA,52,30,99.4,94.6,66.3,3.7,0.9
+Predicted Ocean Water Levels,24,Original,-1,30,99.0,90.4,53.3,4.9,0.82
+Predicted Ocean Water Levels,24,FFCA,50,30,98.8,89.6,52.3,5.1,0.81
+Predicted Rainfall,3,Original,-1,30,99.9,98.5,80.4,1.5,0.98
+Predicted Rainfall,3,FFCA,64,30,99.9,98.6,81.5,1.4,0.99
+Predicted Rainfall,6,Original,-1,30,99.8,96.8,73.6,2.2,0.97
+Predicted Rainfall,6,FFCA,66,30,99.8,96.8,72.7,2.0,0.97
+Predicted Rainfall,12,Original,-1,30,99.7,94.7,67.3,2.7,0.94
+Predicted Rainfall,12,FFCA,74,30,99.7,94.7,67.6,2.5,0.95
+Predicted Rainfall,24,Original,-1,30,99.5,90.3,57.0,3.6,0.91
+Predicted Rainfall,24,FFCA,74,30,99.4,90.3,55.1,3.5,0.91
+Predicted Gate Opening,3,Original,-1,30,99.8,98.7,81.3,1.6,0.98
+Predicted Gate Opening,3,FFCA,54,30,99.9,98.9,82.6,1.5,0.98
+Predicted Gate Opening,6,Original,-1,30,99.7,97.4,75.0,2.3,0.96
+Predicted Gate Opening,6,FFCA,62,30,99.7,97.1,73.3,2.4,0.96
+Predicted Gate Opening,12,Original,-1,30,99.5,95.4,68.3,2.8,0.94
+Predicted Gate Opening,12,FFCA,72,30,99.4,95.1,66.3,3.5,0.91
+Predicted Gate Opening,24,Original,-1,30,99.1,91.2,57.1,3.4,0.92
+Predicted Gate Opening,24,FFCA,62,30,98.7,89.8,52.4,4.2,0.87
+Predictions All Inputs,3,Original,-1,30,99.9,98.7,82.3,1.5,0.98
+Predictions All Inputs,3,FFCA,55,30,99.9,98.7,81.8,1.4,0.99
+Predictions All Inputs,6,Original,-1,30,99.7,97.4,75.5,1.9,0.97
+Predictions All Inputs,6,FFCA,77,30,99.8,97.1,74.2,1.9,0.97
+Predictions All Inputs,12,Original,-1,30,99.7,96.4,71.7,2.3,0.96
+Predictions All Inputs,12,FFCA,96,30,99.8,95.9,71.2,2.2,0.96
+Predictions All Inputs,24,Original,-1,30,99.8,93.6,62.3,2.7,0.94
+Predictions All Inputs,24,FFCA,95,30,99.6,91.8,60.8,3.0,0.94
